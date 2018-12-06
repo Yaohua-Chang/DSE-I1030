@@ -1,8 +1,31 @@
+---
+title: 'Project 3: Statistical Hypothesis Testing'
+runtime: html_document
+output:
+  html_document: default
+  pdf_document: default
+---
+  
+<div id="instructions">
+Due at 11:59 pm on Thursday, October 25<br />
+Name: Yaohua Chang
+Name: Jiffar
+</div>
+  
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
 
+```{r load-libraries, message=FALSE, warning=FALSE}
+#load required libraries here using library() command 
 library(ncdf4)
 library(leaps)
 library(pracma)
+```
 
+
+
+```{r start}
 In <- nc_open("/Users/changyaohua/Desktop/project\ 3/matchups_NPP_2018-01.nc")
 In2 <- nc_open("/Users/changyaohua/Desktop/project\ 3/matchups_NPP_2018-02.nc")
 
@@ -294,3 +317,5 @@ rmse_varibale_8 = sqrt(mean(model_varibale_8$residuals^2))
 
 
 plot(c(1,2,3,4), c(rmse_varibale_1, rmse_varibale_2, rmse_varibale_3, rmse_varibale_4), type='b', xlab = 'Size of best model', ylab = 'RMSE')
+
+```
