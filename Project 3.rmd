@@ -268,6 +268,13 @@ plot(regfit.bwd, scale = "bic")
 
 
 #Question 6
+#When the number of features used in a model increases, the training error will
+#necessarily decrease, but the test error may not. Perform best subset selection on
+#the training set (one of the matchup files), and plot the training set (using another
+#matchup file) RMSE associated with the best model of each size. For which
+#model does the test set MSE take on its minimum value? How does the model at
+#which the test set MSE is minimized compare to the model used to generate the
+#data? Does this agree with the coefficient values of the model?
 regfit.full = regsubsets(sst_insitu ~ ., data = dataframe2, nvmax=8)
 reg.summary = summary(regfit.full)
 
@@ -317,5 +324,9 @@ rmse_varibale_8 = sqrt(mean(model_varibale_8$residuals^2))
 
 
 plot(c(1,2,3,4), c(rmse_varibale_1, rmse_varibale_2, rmse_varibale_3, rmse_varibale_4), type='b', xlab = 'Size of best model', ylab = 'RMSE')
+
+#Question 7
+#Estimate the test error of your best model using the validation set approach (kfold
+#and/or bootstrap). Does it agree with your findings in part 6? Comment on the result
 
 ```
