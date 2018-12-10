@@ -50,8 +50,8 @@ head(dataframe1)
 
 
 # Question 1
+# Use subset selection methods to find the best two-variable model using exhaustive search.
 
-# Use subset selection methods to find the best two-variable model.
 regfit.full = regsubsets(sst_insitu ~ ., data = dataframe1, nvmax=2)
 reg.summary = summary(regfit.full)
 
@@ -85,10 +85,10 @@ sqrt(mean((sst_insitu - sst_reg) ^ 2))
 
 
 
-
-
-
 # Question 2
+#Use a selection method to find the best coefficients in the equation (2). 
+#Compare the performance with (1) and with operational Ts (‘sst_reg’ of netcdf).
+#Use independent data set for evaluation. 
 model3 = lm(sst_insitu ~ BT_M15 + I(BT_M15 - BT_M16):sst_ref + I(BT_M15 - BT_M16):sec, data = dataframe1)
 summary3 = summary(model3)
 model3_adj_r_squared = summary3$adj.r.squared
@@ -112,6 +112,9 @@ sqrt(mean(model4$residuals ^ 2))
 
 
 # Question 4
+#Estimate the coefficients using shrinkage
+#methods (Lasso and Ridge regression). Evaluate and compare with operational Ts
+#(‘sst_reg’ of netcdf). Use independent data set for evaluation. 
 
 #T3.7 <- BT_M12   
 #T4 <- BT_M13 
@@ -211,6 +214,13 @@ mean((lasso.pred-y_day.test)^2)
 
 
 #Question 5
+#Starting from the form (3n) and (3d), use backward selection method to reduce
+#number of terms without significant loss of performance. Compare with Lasso
+#and Ridge results. What is the best model obtained according Cp, AIC, BIC, and
+#adjusted R2
+#? Show some plots to provide evidence for your answer, and report the
+#coefficients of the best model obtained.
+
 regfit.bwd = regsubsets(sst_insitu ~ BT_M15 + I(BT_M15 - BT_M12) + I(BT_M15 - BT_M14) + I(BT_M15 - BT_M16) 
                         + sec + BT_M15:sec + I(BT_M15 - BT_M12):sec + I(BT_M15 - BT_M14):sec 
                         + I(BT_M15 - BT_M16):sec + BT_M15:sst_ref + I(BT_M15 - BT_M12):sst_ref 
