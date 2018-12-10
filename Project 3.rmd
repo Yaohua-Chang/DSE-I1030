@@ -9,7 +9,7 @@ output:
 <div id="instructions">
 Due at 11:59 pm on Thursday, October 25<br />
 Name: Yaohua Chang
-Name: Jiffar
+Name: Jiffar Abakoyas
 </div>
   
 ```{r setup, include=FALSE}
@@ -57,7 +57,7 @@ reg.summary = summary(regfit.full)
 
 reg.summary$rsq
 reg.summary$which
-# The output indicates that the best two-variable model contains only BT_M15 and BT_M16.
+# The output indicates that the best two-variables for the model are BT_M15 and BT_M16.
 
 model1 = lm(sst_insitu ~ BT_M15 + I(BT_M16 - BT_M15), data = dataframe1)
 
@@ -77,6 +77,8 @@ model2_adj_r_squared
 summary2$coefficients
 sqrt(mean(model2$residuals ^ 2))
 
+#Model1 and Model2 are identical modelsand their adjusted R squared is identical. 
+#They have a near perfect value (1) Adj R squared value.
 
 #MSE: mean squared error
 #cor(sst_insitu, sst_reg) ^ 2
@@ -115,6 +117,14 @@ sqrt(mean(model4$residuals ^ 2))
 #Estimate the coefficients using shrinkage
 #methods (Lasso and Ridge regression). Evaluate and compare with operational Ts
 #(‘sst_reg’ of netcdf). Use independent data set for evaluation. 
+
+#Lasso and Ridge methods involve regularization of regression coefficients.
+
+#In Ridge Regression, the ordinary least squares loss function is augmented in such a way that the sum of squared residuals is minimized #but also the size of parameter estimates are penalized in order to shrink them towards zero:
+
+#In Lasso (Least Absolute Shrinkage and Selection Operator), similar to Ridge, also adds a penalty for non-zero coefficients, but unlike #ridge regression which penalizes sum of squared coefficients, Lasso penalizes the sum of absolute values. 
+#As a result, for high values of λ, many coefficients are exactly zeroed under lasso, which is never the case in ridge regression.
+
 
 #T3.7 <- BT_M12   
 #T4 <- BT_M13 
