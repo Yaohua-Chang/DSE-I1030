@@ -1,30 +1,36 @@
 ---
-title: 'Project 3: Statistical Hypothesis Testing'
+title: 'Project 3 Sea Surface  Temperature Measurements'
 runtime: html_document
 output:
-  html_document: default
   pdf_document: default
+  html_document: default
 ---
-  
 <div id="instructions">
-Due at 11:59 pm on Thursday, October 25<br />
-Name: Yaohua Chang
+Due at 6:00 pm on Thursday, December 20, 2018<br />
+Name: Yaohua Chang<br />
 Name: Jiffar
 </div>
+
+TODO:Link other datsets to one
+TODO:Fill out table and conclusion
+TODO:Compelte Problem 6 & 7
   
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ```{r load-libraries, message=FALSE, warning=FALSE}
-#load required libraries here using library() command 
+#Initial Libraries
 library(ncdf4)
 library(leaps)
 library(pracma)
+library(glmnet)
 ```
 
+##Background
+Polar-orbiting satellites have been carrying variety of radiometer instruments with infrared (IR) channels suitable for estimating sea surface temperature (SST) since 1981. The instruments designed for SST estimations have channels that are located at selected wavelengths where the atmosphere is relatively transparent. At these IR wavelengths the ocean surface emits radiation almost as a blackbody. In principle, without an absorbing and emitting atmosphere between the sea surface and the satellite, it would be possible to estimate SST using a single-channel measurement. In reality, surface-leaving IR radiance is partially attenuated by the atmosphere before it reaches a satellite sensor. Therefore it is necessary to make corrections for atmospheric effects [Minnett, 1990]. Several techniques have been proposed over the years to account for the atmospheric absorption of surface IR radiance to improve the accuracy of satellite retrievals of SST. Anding and Kauth [1970] found that the difference in measurement at two properly selected IR channels is proportional to the amount of atmospheric correction required. Using differences in brightness temperatures (BT) measured by an early satellite radiometer, [Prabhakra et. al. 1974] estimated SST to reasonable accuracy. Barton [1995] showed that this differential absorption between channels is exploited in all IR SST algorithms and demonstrated that there is a basic form to most algorithms.
 
-
+##Load Data
 ```{r start}
 In <- nc_open("/Users/changyaohua/Desktop/project\ 3/matchups_NPP_2018-01.nc")
 In2 <- nc_open("/Users/changyaohua/Desktop/project\ 3/matchups_NPP_2018-02.nc")
@@ -38,6 +44,8 @@ sst_ref <- ncvar_get(In, "sst_ref")
 sza <- ncvar_get(In, 'sza')
 vza <- ncvar_get(In, 'vza')
 
+sec_theta = sec(vza) - 1
+
 BT_M12 <- ncvar_get(In, "BT_M12")
 BT_M13 <- ncvar_get(In, "BT_M13")
 BT_M14 <- ncvar_get(In, "BT_M14")
@@ -48,17 +56,22 @@ BT_M16 <- ncvar_get(In, "BT_M16")
 dataframe1 = data.frame(sst_insitu, BT_M12, BT_M13, BT_M14, BT_M15, BT_M16)
 head(dataframe1)
 
+```
 
-# Question 1
-
+## Question 1
+Use subset selection methods to find the best 𝜆! and 𝜆! in equation (1). Since there are only 2 variables, 𝑇!! and 𝑇!! , exhaustive search is an appropriate method.
+```{r}
 # Use subset selection methods to find the best two-variable model.
 regfit.full = regsubsets(sst_insitu ~ ., data = dataframe1, nvmax=2)
 reg.summary = summary(regfit.full)
 
 reg.summary$rsq
 reg.summary$which
-# The output indicates that the best two-variable model contains only BT_M15 and BT_M16.
+```
 
+Conclusion: The output indicates that the best two-variable model contains only BT_M15 and BT_M16.
+
+```{r}
 model1 = lm(sst_insitu ~ BT_M15 + I(BT_M16 - BT_M15), data = dataframe1)
 
 model2 = lm(sst_insitu ~ BT_M16 + I(BT_M15 - BT_M16), data = dataframe1)
@@ -66,98 +79,63 @@ model2 = lm(sst_insitu ~ BT_M16 + I(BT_M15 - BT_M16), data = dataframe1)
 # To evaluate the performance of model1, the adjusted R squared is 0.979362
 summary1 = summary(model1)
 model1_adj_r_squared = summary1$adj.r.squared
-model1_adj_r_squared
 summary1$coefficients
+# the performance of equation(1)
+model1_adj_r_squared
 sqrt(mean(model1$residuals ^ 2))
+
 
 # To evaluate the performance of model2, the adjusted R squared is 0.979362 as well
 summary2 = summary(model2)
 model2_adj_r_squared = summary2$adj.r.squared
-model2_adj_r_squared
 summary2$coefficients
+# the performance of equation(1)
+model2_adj_r_squared
 sqrt(mean(model2$residuals ^ 2))
-
-
-#MSE: mean squared error
-#cor(sst_insitu, sst_reg) ^ 2
-sqrt(mean((sst_insitu - sst_reg) ^ 2))
-
-
-
-
-
-
-
-# Question 2
-model3 = lm(sst_insitu ~ BT_M15 + I(BT_M15 - BT_M16):sst_ref + I(BT_M15 - BT_M16):sec, data = dataframe1)
+```
+## Question 2
+```{r }
+model3 = lm(sst_insitu ~ BT_M15 + I(BT_M15 - BT_M16):sst_ref + I(BT_M15 - BT_M16):sec_theta, data = dataframe1)
 summary3 = summary(model3)
 model3_adj_r_squared = summary3$adj.r.squared
-model3_adj_r_squared
 summary3$coefficients
-
+# the performance of equation(2)
+model3_adj_r_squared
 sqrt(mean(model3$residuals ^ 2))
 
+# the performance of operational 𝑇
+sqrt(mean((sst_insitu - sst_reg) ^ 2))
+```
 
+Conlusion:
 
-
-# Question 3
-model4 = lm(sst_insitu ~ BT_M15 + I(BT_M15 - BT_M16):sst_ref + I(BT_M15 - BT_M16):sec + sst_ref, data = dataframe1)
+## Question 3
+```{r}
+model4 = lm(sst_insitu ~ BT_M15 + I(BT_M15 - BT_M16):sst_ref + I(BT_M15 - BT_M16):sec_theta + sst_ref, data = dataframe1)
 summary4 = summary(model4)
 model4_adj_r_squared = summary4$adj.r.squared
-model4_adj_r_squared
 summary4$coefficients
-
+# the performance of equation(3)
+model4_adj_r_squared
 sqrt(mean(model4$residuals ^ 2))
+```
 
+Conslusion:
 
-
-# Question 4
-
-#T3.7 <- BT_M12   
-#T4 <- BT_M13 
-#T8.6 <- BT_M14 
-#T11 <- BT_M15 
-#T12 <- BT_M16 
-
-sec = sec(vza) - 1
-dataframe2 = data.frame(sza,sec,sst_insitu, BT_M12, BT_M13, BT_M14, BT_M15, BT_M16, sst_ref)
+## Question 4
+### Regression Equation night (3n)
+```{r}
+dataframe2 = data.frame(sza,sec_theta,sst_insitu, BT_M12, BT_M13, BT_M14, BT_M15, BT_M16, sst_ref)
 head(dataframe2,10)
-
-day_time = dataframe2[(dataframe2$sza >= 0) & (dataframe2$sza <= 85), ]
-head(day_time)
 
 night_time = dataframe2[(dataframe2$sza >= 95) & (dataframe2$sza <= 180), ]
 head(night_time)
 
-model_night = lm(sst_insitu ~ BT_M15 + I(BT_M15 - BT_M12) + I(BT_M15 - BT_M14) + I(BT_M15 - BT_M16) 
-                 + sec + BT_M15:sec + I(BT_M15 - BT_M12):sec + I(BT_M15 - BT_M14):sec 
-                 + I(BT_M15 - BT_M16):sec + BT_M15:sst_ref + I(BT_M15 - BT_M12):sst_ref 
-                 + I(BT_M15 - BT_M14):sst_ref + I(BT_M15 - BT_M16):sst_ref, data = night_time)
-summary_night = summary(model_night)
-model_night_r_squared = summary_night$adj.r.squared
-model_night_r_squared
-summary_night$coefficients
-
-sqrt(mean(model_night$residuals ^ 2))
-
-
-model_day = lm(sst_insitu ~ BT_M15 + I(BT_M15 - BT_M14) + I(BT_M15 - BT_M16) + sec + BT_M15:sec 
-               + I(BT_M15 - BT_M14):sec + I(BT_M15 - BT_M16):sec + BT_M15:sst_ref 
-               + I(BT_M15 - BT_M14):sst_ref + I(BT_M15 - BT_M16):sst_ref, data = day_time)
-summary_day = summary(model_day)
-model_day_r_squared = summary_day$adj.r.squared
-model_day_r_squared
-summary_day$coefficients
-
-sqrt(mean(model_day$residuals ^ 2))
-
-
-
-library(glmnet)
 
 x_night=model.matrix(sst_insitu ~  BT_M15 + I(BT_M15 - BT_M12) + I(BT_M15 - BT_M14) + I(BT_M15 - BT_M16) 
-               + sec + BT_M15:sec + I(BT_M15 - BT_M12):sec + I(BT_M15 - BT_M14):sec 
-               + I(BT_M15 - BT_M16):sec + BT_M15:sst_ref + I(BT_M15 - BT_M12):sst_ref 
+               + sec_theta + BT_M15:sec_theta + I(BT_M15 - BT_M12):sec_theta 
+               + I(BT_M15 - BT_M14):sec_theta 
+               + I(BT_M15 - BT_M16):sec_theta + BT_M15:sst_ref + I(BT_M15 - BT_M12):sst_ref 
                + I(BT_M15 - BT_M14):sst_ref + I(BT_M15 - BT_M16):sst_ref, night_time)[,-1]
 y_night=as.vector(night_time$sst_insitu)
 
@@ -173,22 +151,32 @@ y_night.test=y_night[test]
 
 grid=10^seq(10,-2,length=100)
 
+#Ridge regression for night (3n)
 out=glmnet(x_night,y_night,alpha=0)
 ridge.mod=glmnet(x_night,y_night,alpha=0,lambda=grid)
 ridge.pred=predict(ridge.mod,s=min(out$lambda) ,newx=x_night[test,])
+# Estimate the coefficients using ridge regression
 predict(out,type="coefficients",s=min(out$lambda))[1:14,]
+# The performance of equation(3n) using ridge regression
 mean((ridge.pred-y_night.test)^2)
 
-out=glmnet(x,y,alpha=1)
+# Lasso regression for night (3n)
+out=glmnet(x_night,y_night,alpha=1)
 lasso.mod=glmnet(x_night[train ,],y_night[train],alpha=1,lambda=grid)
 lasso.pred=predict(lasso.mod,s=min(out$lambda) ,newx=x_night[test,])
+# Estimate the coefficients using Lasso regression
 predict(out,type="coefficients",s=min(out$lambda))[1:14,]
+# The performance of equation(3n) using Lasso regression
 mean((lasso.pred-y_night.test)^2)
+```
+### Regression Equation day (3d)
+```{r}
+day_time = dataframe2[(dataframe2$sza >= 0) & (dataframe2$sza <= 85), ]
+head(day_time)
 
-
-# for daytime
-x_day=model.matrix(sst_insitu ~ BT_M15 + I(BT_M15 - BT_M14) + I(BT_M15 - BT_M16) + sec + BT_M15:sec 
-                   + I(BT_M15 - BT_M14):sec + I(BT_M15 - BT_M16):sec + BT_M15:sst_ref 
+x_day=model.matrix(sst_insitu ~ BT_M15 + I(BT_M15 - BT_M14) + I(BT_M15 - BT_M16) + sec_theta 
+                   + BT_M15:sec_theta 
+                   + I(BT_M15 - BT_M14):sec_theta + I(BT_M15 - BT_M16):sec_theta + BT_M15:sst_ref 
                    + I(BT_M15 - BT_M14):sst_ref + I(BT_M15 - BT_M16):sst_ref, day_time)[,-1]
 y_day=as.vector(day_time$sst_insitu)
 
@@ -197,23 +185,36 @@ train=sample(1:nrow(x_day), nrow(x_day)/2)
 test=(-train)
 y_day.test=y_day[test]
 
+grid=10^seq(10,-2,length=100)
+
+# Ridge regression for day (3d) 
 out=glmnet(x_day,y_day,alpha=0)
 ridge.mod=glmnet(x_day,y_day,alpha=0,lambda=grid)
 ridge.pred=predict(ridge.mod,s=min(out$lambda) ,newx=x_day[test,])
-predict(out_day,type="coefficients",s=min(out$lambda))[1:11,]
+# Estimate the coefficients using ridge regression
+predict(out,type="coefficients",s=min(out$lambda))[1:11,]
+# The performance of equation(3d) using ridge regression
 mean((ridge.pred-y_day.test)^2)
 
-out_day=glmnet(x_day,y_day,alpha=1)
+#Lasso regression for day (3d) 
+out=glmnet(x_day,y_day,alpha=1)
 lasso.mod=glmnet(x_day[train ,],y_day[train],alpha=1,lambda=grid)
 lasso.pred=predict(lasso.mod,s=min(out$lambda) ,newx=x_day[test,])
+# Estimate the coefficients using Lasso regression
 predict(out,type="coefficients",s=min(out$lambda))[1:11,]
+# The performance of equation(3d) using Lasso regression
 mean((lasso.pred-y_day.test)^2)
+```
 
+Conslusion:
 
-#Question 5
-regfit.bwd = regsubsets(sst_insitu ~ BT_M15 + I(BT_M15 - BT_M12) + I(BT_M15 - BT_M14) + I(BT_M15 - BT_M16) 
-                        + sec + BT_M15:sec + I(BT_M15 - BT_M12):sec + I(BT_M15 - BT_M14):sec 
-                        + I(BT_M15 - BT_M16):sec + BT_M15:sst_ref + I(BT_M15 - BT_M12):sst_ref 
+##Question 5
+Starting from the form (3n) and (3d), use backward selection method to reduce number of terms without significant loss of performance. Compare with Lasso and Ridge results. What is the best model obtained according Cp, AIC, BIC, and adjusted R2? Show some plots to provide evidence for your answer, and report the coefficients of the best model obtained.
+```{r }
+regfit.bwd = regsubsets(sst_insitu ~ BT_M15 + I(BT_M15 - BT_M12) + I(BT_M15 - BT_M14)
+                        + I(BT_M15 - BT_M16) + sec_theta + BT_M15:sec_theta 
+                        + I(BT_M15 - BT_M12):sec_theta + I(BT_M15 - BT_M14):sec_theta 
+                        + I(BT_M15 - BT_M16):sec_theta + BT_M15:sst_ref + I(BT_M15 - BT_M12):sst_ref 
                         + I(BT_M15 - BT_M14):sst_ref + I(BT_M15 - BT_M16):sst_ref, 
                         data = night_time, method='backward', nvmax=13)
 regfit.summary = summary(regfit.bwd)
@@ -221,21 +222,19 @@ regfit.summary$which
 regfit.summary$adjr2
 regfit.summary$bic
 
-
-# The result tells us that only keeping b1,b10 and remove other variables is without significant loss of performance
-
 coef(regfit.bwd, 2)
+```
 
+Conslusion: The result tells us that only keeping b1,b10 and remove other variables is without significant loss of performance
+
+```{r}
 model6 = lm(sst_insitu ~ BT_M15 + BT_M15:sst_ref, data = night_time)
 model6_r_squared = summary(model6)$adj.r.squared
 model6_r_squared
 sqrt(mean(model6$residuals^2))
 
-AIC(model6)
-BIC(model6)
-
-regfit.bwd = regsubsets(sst_insitu ~ BT_M15 + I(BT_M15 - BT_M14) + I(BT_M15 - BT_M16) + sec + BT_M15:sec 
-                        + I(BT_M15 - BT_M14):sec + I(BT_M15 - BT_M16):sec + BT_M15:sst_ref 
+regfit.bwd = regsubsets(sst_insitu ~ BT_M15 + I(BT_M15 - BT_M14) + I(BT_M15 - BT_M16) + sec_theta + BT_M15:sec_theta 
+                        + I(BT_M15 - BT_M14):sec_theta + I(BT_M15 - BT_M16):sec_theta + BT_M15:sst_ref 
                         + I(BT_M15 - BT_M14):sst_ref + I(BT_M15 - BT_M16):sst_ref, 
                         data = day_time, method='backward', nvmax=10)
 regfit.summary = summary(regfit.bwd)
@@ -243,11 +242,12 @@ regfit.summary$which
 regfit.summary$adjr2
 regfit.summary$bic
 regfit.summary$cp
-
-
-# The result tells us that only keeping b1,b10 and remove other variables is without significant loss of performance
 coef(regfit.bwd, 2)
+```
 
+Conslusion: The result tells us that only keeping b1,b10 and remove other variables is without significant loss of performance
+
+```{r}
 model7 = lm(sst_insitu ~ BT_M15 + BT_M15:sst_ref, data = night_time)
 model7_r_squared = summary(model6)$adj.r.squared
 model7_r_squared
@@ -258,16 +258,37 @@ sqrt(mean(model7$residuals^2))
 regfit.summary$adjr2
 regfit.summary$bic
 regfit.summary$cp
-aic = regfit.summary$bic + (2-log(4819216))*(9+1)
 
+n <- length(sst_insitu)
+p <- 10
+aic = regfit.summary$bic + (2-log(n))*(p+1)
+
+
+par(mfrow=c(2,2))
+plot(regfit.summary$adjr2 ,xlab="Number of Variables ", ylab="Adjusted RSq",type="l")
+max_adjr2 = which.max(regfit.summary$adjr2)
+points(max_adjr2,regfit.summary$adjr2[max_adjr2], col="red",cex=2,pch=20)
+plot(regfit.summary$cp ,xlab="Number of Variables ",ylab="Cp", type='l')
+min_cp = which.min(regfit.summary$cp )
+points(min_cp,regfit.summary$cp[min_cp],col="red",cex=2,pch=20)
+plot(regfit.summary$bic ,xlab="Number of Variables ",ylab="BIC",type='l')
+min_bic = which.min(regfit.summary$bic )
+points(min_bic,regfit.summary$bic[min_bic],col="red",cex=2,pch=20)
+plot(x = seq(1,p),y = aic, xlab="Number of Variables ", ylab = "AIC",type="l")
+min_aic = which.min(aic)
+points(min_aic,aic[min_aic],col="red",cex=2,pch=20)
+```
+
+```{r}
 plot(regfit.bwd, scale = "Cp")
 plot(regfit.bwd, scale = "adjr2")
 plot(regfit.bwd, scale = "bic")
-# Link other datas
-# Can I get R^2 of origin?
 
+```
 
-#Question 6
+##Question 6
+When the number of features used in a model increases, the training error will necessarily decrease, but the test error may not. Perform best subset selection on the training set (one of the matchup files), and plot the training set (using another matchup file) RMSE associated with the best model of each size. For which model does the test set MSE take on its minimum value? How does the model at which the test set MSE is minimized compare to the model used to generate the data? Does this agree with the coefficient values of the model?
+```{r}
 regfit.full = regsubsets(sst_insitu ~ ., data = dataframe2, nvmax=8)
 reg.summary = summary(regfit.full)
 
@@ -303,19 +324,35 @@ rmse_varibale_3 = sqrt(mean(model_varibale_3$residuals^2))
 model_varibale_4 = lm(sst_insitu_2~sst_ref_2 + sza_2 + BT_M15_2 + BT_M16_2, data=dataframe3)
 rmse_varibale_4 = sqrt(mean(model_varibale_4$residuals^2))
 
-model_varibale_5 = lm(sst_insitu_2~sst_ref_2 + sza_2 + BT_M15_2 + BT_M16_2 + BT_M13_2, data=dataframe3)
-rmse_varibale_5 = sqrt(mean(model_varibale_5$residuals^2))
+#model_varibale_5 = lm(sst_insitu_2~sst_ref_2 + sza_2 + BT_M15_2 + BT_M16_2 + BT_M13_2, data=dataframe3)
+#rmse_varibale_5 = sqrt(mean(model_varibale_5$residuals^2))
 
-model_varibale_6 = lm(sst_insitu_2~sst_ref_2 + sza_2 + BT_M15_2 + BT_M16_2 + BT_M13_2 + BT_M12_2, data=dataframe3)
-rmse_varibale_6 = sqrt(mean(model_varibale_6$residuals^2))
+#model_varibale_6 = lm(sst_insitu_2~sst_ref_2 + sza_2 + BT_M15_2 + BT_M16_2 + BT_M13_2 + BT_M12_2, data=dataframe3)
+#rmse_varibale_6 = sqrt(mean(model_varibale_6$residuals^2))
 
-model_varibale_7 = lm(sst_insitu_2~sst_ref_2 + sza_2 + BT_M15_2 + BT_M16_2 + BT_M13_2 + BT_M12_2 + BT_M14_2, data=dataframe3)
-rmse_varibale_7 = sqrt(mean(model_varibale_7$residuals^2))
+#model_varibale_7 = lm(sst_insitu_2~sst_ref_2 + sza_2 + BT_M15_2 + BT_M16_2 + BT_M13_2 + BT_M12_2 + BT_M14_2, data=dataframe3)
+#rmse_varibale_7 = sqrt(mean(model_varibale_7$residuals^2))
 
-model_varibale_8 = lm(sst_insitu_2~sst_ref_2 + sza_2 + BT_M15_2 + BT_M16_2 + BT_M13_2 + BT_M12_2 + BT_M14_2 + sec, data=dataframe3)
-rmse_varibale_8 = sqrt(mean(model_varibale_8$residuals^2))
+#model_varibale_8 = lm(sst_insitu_2~sst_ref_2 + sza_2 + BT_M15_2 + BT_M16_2 + BT_M13_2 + BT_M12_2 + BT_M14_2 + sec_theta, data=dataframe3)
+#rmse_varibale_8 = sqrt(mean(model_varibale_8$residuals^2))
 
 
 plot(c(1,2,3,4), c(rmse_varibale_1, rmse_varibale_2, rmse_varibale_3, rmse_varibale_4), type='b', xlab = 'Size of best model', ylab = 'RMSE')
 
 ```
+
+## Question 7
+Estimate the test error of your best model using the validation set approach (k- fold and/or bootstrap). Does it agree with your findings in part 6? Comment on the result.
+
+## References
+Anding, D. and R. Kauth. 1970. Estimation of sea surface temperature from space, Remote Sens. Environ., 1, 217-220.
+
+Barton, I.J., 1995. Satellite-derived sea surface temperatures: Current status. Journal of Geophysical Research 100: 8777–8790.
+
+Minnett, P.J. 1990. The regional optimization of infrared measurements of sea surface temperature from space. J. Geophys Res., 95
+
+Petrenko, B.; Ignatov, A.; Kihai, Y.; Stroup, J.; Dash, P. 2014. Evaluation and selection of SST regression algorithms for JPSS VIIRS. J. Geophys. Res., 119, 4580–4599 https://agupubs.onlinelibrary.wiley.com/doi/epdf/10.1002/2013JD020637
+
+Prabhakara, C., G. Dalau, and V.G. Kunde. 1974. Estimation of sea surface temperature from remote sensing in the 11 to 13mm window region, J. Geophys. Res., 79, 5039-5044.
+              
+Walton, C. C., W. G. Pichel, F. J. Sapper, and D. A. May, 1988. The development and operational application of nonlinear algorithms for the measurement of sea surface temperatures with NOAA polar-orbiting environmental satellites. Journal of Geophysical Research 103: 27999–28012.
