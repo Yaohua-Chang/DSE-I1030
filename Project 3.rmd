@@ -59,8 +59,8 @@ head(dataframe1)
 ```
 
 ## Question 1
-Use subset selection methods to find the best 𝜆! and 𝜆! in equation (1).  
-Since there are only 2 variables, 𝑇!! and 𝑇!! , exhaustive search is an appropriate method.  
+Use subset selection methods to find the best 2 variables𝜆! in equation (1).  
+Since there are only 2 variables, exhaustive search is an appropriate method.  
 ```{r}
 # Question 1
 # Use subset selection methods to find the best two-variable model using exhaustive search.
@@ -112,8 +112,14 @@ sqrt(mean(model3$residuals ^ 2))
 # the performance of operational 𝑇
 sqrt(mean((sst_insitu - sst_reg) ^ 2))
 ```
+Model | RMSE | R^2^  
+------------- |------------ |--------------
+equation (2) | 1.037475 | 0.9797013
+equation (1) | 1.046112 | 0.979362
+operational Ts | 0.3289296 | null
 
-**Conclusion:**
+**Conclusion:** the performance of equation (2) is better than equation (1) a little bit, but it is worse than operational Ts.
+
 
 ## Question 3
 ```{r}
@@ -126,20 +132,28 @@ model4_adj_r_squared
 sqrt(mean(model4$residuals ^ 2))
 ```
 
-**Conclusion:**
+Model | RMSE | R^2^  
+------------- |------------ |--------------
+equation (2a) | 0.2380083 | 0.9989317
+equation (2) | 1.037475 | 0.9797013
+equation (1) | 1.046112 | 0.979362
+operational Ts | 0.3289296 | null
+
+**Conclusion:** the performance of equation (2a) is better than equation (1) and equation (2) a lot, but it is worse than operational Ts a little bit.
 
 # Question 4
 Estimate the coefficients using shrinkage methods (Lasso and Ridge regression).   
-Evaluate and compare with operational Ts
+Evaluate and compare with operational Ts.    
+Use independent data set for evaluation. 
 
+### Regression Equation night (3n)
 ```{r}
-#(‘sst_reg’ of netcdf). Use independent data set for evaluation. 
-
 #Lasso and Ridge methods involve regularization of regression coefficients.
 
 #In Ridge Regression, the ordinary least squares loss function is augmented in such a way that the sum of squared residuals is minimized #but also the size of parameter estimates are penalized in order to shrink them towards zero:
 
 #In Lasso (Least Absolute Shrinkage and Selection Operator), similar to Ridge, also adds a penalty for non-zero coefficients, but unlike #ridge regression which penalizes sum of squared coefficients, Lasso penalizes the sum of absolute values. 
+
 #As a result, for high values of λ, many coefficients are exactly zeroed under lasso, which is never the case in ridge regression.
 
 
@@ -177,7 +191,7 @@ ridge.pred=predict(ridge.mod,s=min(out$lambda) ,newx=x_night[test,])
 # Estimate the coefficients using ridge regression
 predict(out,type="coefficients",s=min(out$lambda))[1:14,]
 # The performance of equation(3n) using ridge regression
-mean((ridge.pred-y_night.test)^2)
+sqrt(mean((ridge.pred-y_night.test)^2))
 
 # Lasso regression for night (3n)
 out=glmnet(x_night,y_night,alpha=1)
@@ -186,7 +200,7 @@ lasso.pred=predict(lasso.mod,s=min(out$lambda) ,newx=x_night[test,])
 # Estimate the coefficients using Lasso regression
 predict(out,type="coefficients",s=min(out$lambda))[1:14,]
 # The performance of equation(3n) using Lasso regression
-mean((lasso.pred-y_night.test)^2)
+sqrt(mean((lasso.pred-y_night.test)^2))
 ```
 
 ### Regression Equation day (3d)
@@ -214,7 +228,7 @@ ridge.pred=predict(ridge.mod,s=min(out$lambda) ,newx=x_day[test,])
 # Estimate the coefficients using ridge regression
 predict(out,type="coefficients",s=min(out$lambda))[1:11,]
 # The performance of equation(3d) using ridge regression
-mean((ridge.pred-y_day.test)^2)
+sqrt(mean((ridge.pred-y_day.test)^2))
 
 #Lasso regression for day (3d) 
 out=glmnet(x_day,y_day,alpha=1)
@@ -223,15 +237,21 @@ lasso.pred=predict(lasso.mod,s=min(out$lambda) ,newx=x_day[test,])
 # Estimate the coefficients using Lasso regression
 predict(out,type="coefficients",s=min(out$lambda))[1:11,]
 # The performance of equation(3d) using Lasso regression
-mean((lasso.pred-y_day.test)^2)
+sqrt(mean((lasso.pred-y_day.test)^2))
 ```
 
-**Conclusion:**
+Model | RMSE 
+------------- |------------ 
+equation (3n) using ridge regression | 0.4893441 
+equation (3n) using lasso regression | 0.2767067 
+equation (3d) using ridge regression | 0.6798317 
+equation (3d) using lasso regression | 0.4430136 
+operational Ts | 0.3289296 
+
+**Conclusion:** only the performance of equation (3n) using lasso regression is better than operational Ts a little bit, while other equations are worse than operational Ts.
 
 ##Question 5
 Starting from the form (3n) and (3d), use backward selection method to reduce number of terms without significant loss of performance.  
-Compare with Lasso and Ridge results. What is the best model obtained according Cp, AIC, BIC, and adjusted R2?   
-Show some plots to provide evidence for your answer, and report the coefficients of the best model obtained.
 ```{r }
 regfit.bwd = regsubsets(sst_insitu ~ BT_M15 + I(BT_M15 - BT_M12) + I(BT_M15 - BT_M14)
                         + I(BT_M15 - BT_M16) + sec_theta + BT_M15:sec_theta 
@@ -250,11 +270,6 @@ coef(regfit.bwd, 2)
 **Conclusion:** The result tells us that only keeping b1,b10 and remove other variables is without significant loss of performance
 
 ```{r}
-model6 = lm(sst_insitu ~ BT_M15 + BT_M15:sst_ref, data = night_time)
-model6_r_squared = summary(model6)$adj.r.squared
-model6_r_squared
-sqrt(mean(model6$residuals^2))
-
 regfit.bwd = regsubsets(sst_insitu ~ BT_M15 + I(BT_M15 - BT_M14) + I(BT_M15 - BT_M16) + sec_theta + BT_M15:sec_theta 
                         + I(BT_M15 - BT_M14):sec_theta + I(BT_M15 - BT_M16):sec_theta + BT_M15:sst_ref 
                         + I(BT_M15 - BT_M14):sst_ref + I(BT_M15 - BT_M16):sst_ref, 
@@ -269,14 +284,32 @@ coef(regfit.bwd, 2)
 
 **Conclusion:**The result tells us that only keeping b1,b10 and remove other variables is without significant loss of performance
 
-```{r}
-model7 = lm(sst_insitu ~ BT_M15 + BT_M15:sst_ref, data = night_time)
+``Compare with Lasso and Ridge results.  
+`{r}
+model6 = lm(sst_insitu ~ BT_M15 + BT_M15:sst_ref, data = night_time)
+model6_r_squared = summary(model6)$adj.r.squared
+model6_r_squared
+sqrt(mean(model6$residuals^2))
+
+model7 = lm(sst_insitu ~ BT_M15 + BT_M15:sst_ref, data = day_time)
 model7_r_squared = summary(model6)$adj.r.squared
 model7_r_squared
 sqrt(mean(model7$residuals^2))
+```
+Codel | RMSE 
+------------- |------------ 
+equation (3n) using backward selection method | 0.2535694 
+equation (3d) using backward selection method | 0.2807222 
+equation (3n) using ridge regression | 0.4893441 
+equation (3n) using lasso regression | 0.2767067 
+equation (3d) using ridge regression | 0.6798317 
+equation (3d) using lasso regression | 0.4430136 
+operational Ts | 0.3289296 
 
+**Conclusion:** Compare with Lasso and Ridge results, the performance of equation (3n) and equation (3d) improve after using backward selection method.
 
-
+What is the best model obtained according Cp, AIC, BIC, and adjusted R2? 
+```{r}
 regfit.summary$adjr2
 regfit.summary$bic
 regfit.summary$cp
@@ -284,7 +317,6 @@ regfit.summary$cp
 n <- length(sst_insitu)
 p <- 10
 aic = regfit.summary$bic + (2-log(n))*(p+1)
-
 
 par(mfrow=c(2,2))
 plot(regfit.summary$adjr2 ,xlab="Number of Variables ", ylab="Adjusted RSq",type="l")
@@ -301,6 +333,9 @@ min_aic = which.min(aic)
 points(min_aic,aic[min_aic],col="red",cex=2,pch=20)
 ```
 
+**Conclusion:** These plots tell us that best model obtained according Cp and adjusted R2 when there are eight variables in the model, while best model obtained according AIC, and BIC when there are six variables in the model.
+
+Show some plots to provide evidence for your answer.
 ```{r}
 plot(regfit.bwd, scale = "Cp")
 plot(regfit.bwd, scale = "adjr2")
@@ -308,12 +343,14 @@ plot(regfit.bwd, scale = "bic")
 
 ```
 
+Report the coefficients of the best model obtained.
+```{r}
+coef(regfit.bwd, 8)
+coef(regfit.bwd, 6)
+```
+
 ##Question 6
-When the number of features used in a model increases, the training error will necessarily decrease, but the test error may not.   
 Perform best subset selection on the training set (one of the matchup files), and plot the training set (using another matchup file) RMSE associated with the best model of each size.   
-For which model does the test set MSE take on its minimum value?   
-How does the model at which the test set MSE is minimized compare to the model used to generate the data?  
-Does this agree with the coefficient values of the model?
 ```{r}
 regfit.full = regsubsets(sst_insitu ~ ., data = dataframe2, nvmax=8)
 reg.summary = summary(regfit.full)
@@ -367,10 +404,17 @@ plot(c(1,2,3,4), c(rmse_varibale_1, rmse_varibale_2, rmse_varibale_3, rmse_varib
 
 ```
 
+For which model does the test set MSE take on its minimum value?   
+
+How does the model at which the test set MSE is minimized compare to the model used to generate the data?  
+Does this agree with the coefficient values of the model?
+
+
 **Conclusion:**
 
 ## Question 7
-Estimate the test error of your best model using the validation set approach (k- fold and/or bootstrap).   Does it agree with your findings in part 6? Comment on the result.
+Estimate the test error of your best model using the validation set approach (k- fold and/or bootstrap).   
+Does it agree with your findings in part 6? Comment on the result.
 
 **Conclusion:**
 
